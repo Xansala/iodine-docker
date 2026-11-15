@@ -1,28 +1,12 @@
-name: build
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-permissions:
-  contents: read
-  packages: write
-jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/iodine:v0.9.1
-            ghcr.io/${{ github.repository_owner }}/iodine:latest
+FROM alpine:3.22 AS build
+ARG IODINE_REF=v0.9.1
+RUN apk add --no-cache build-base git zlib-dev zlib-static
+RUN git clone --depth 1 --branch "${IODINE_REF}" https://github.com/yarrick/iodine /src
+WORKDIR /src
+RUN make && make install prefix=/out
+
+FROM alpine:3.22
+RUN apk add --no-cache zlib iptables
+COPY --from=build /out/ /usr/
+EXPOSE 53/udp
+ENTRYPOINT ["iodined"]
