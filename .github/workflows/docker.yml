@@ -18,11 +18,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lowercase owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          
       - uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/xansala/iodine:0.9.1
-            ghcr.io/xamsala/iodine:latest
+            ghcr.io/${{ env.OWNER }}/iodine:0.9.1
+            ghcr.io/${{ env.OWNER }}/iodine:latest
